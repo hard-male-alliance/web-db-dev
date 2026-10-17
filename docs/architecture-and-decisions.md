@@ -1,7 +1,7 @@
 # Current architecture and decisions
 
 Updated: 2026-10-17 (Asia/Singapore).
-Status: local infrastructure configured; native PHP checks pass. Docker build and database integration await execution on a Docker host.
+Status: local infrastructure configured; native PHP checks and the complete Ubuntu GitHub Actions build/database/persistence/restore workflow passed.
 
 ## 1. Final direction
 
@@ -88,7 +88,7 @@ Implemented checks:
 4. Marker survival across container replacement.
 5. SQL export restored into a fresh CI database volume.
 
-(1)-(2) passed on native Windows. Compose parsed successfully; image digests and Debian snapshot endpoints were checked. (3)-(5), Docker image build, and Linux/arm64 execution have not run on this host because Docker Engine is absent. A defined CI workflow is not a successful CI run.
+(1)-(2) passed on native Windows. All container checks (1), (3)-(5), image build, dependency audit, and HTTP readiness passed on an Ubuntu 24.04 GitHub-hosted runner at commit `1693e0434da26dcba32b148ca1227208e1d9b9ff`. See the [validation record](validation/local-environment.md). The Windows host still has no Docker engine; Docker Desktop, arm64, and a second team member's environment are not yet verified.
 
 The completed website must additionally pass actual login/edit/publish/message/moderation/download and restore journeys, including reproduction on another member's machine.
 
@@ -96,7 +96,7 @@ The completed website must additionally pass actual login/edit/publish/message/m
 
 D1 helper transport is official, but audited PDO wrappers do not transparently preserve Yii2 transactions; see [D1 research](research/yii2-d1-feasibility.md). Managed MySQL, including Aiven/Cloud SQL, remains viable if public hosting becomes necessary; see [database research](research/managed-mysql-options.md). PostgreSQL/SQLite are not inherently unsuitable; MySQL was chosen for course/tooling alignment. Rust/DO/Containers are deferred, not rejected.
 
-Next: execute Compose/restore checks on a Docker host, scaffold Yii2 Advanced, define team identity/schema/features, choose a theme, implement authorization, decide uploads/sessions, and confirm the deadline. Build a vertical business workflow rather than expanding infrastructure further.
+Next: reproduce on a team member's Docker host, scaffold Yii2 Advanced, define team identity/schema/features, choose a theme, implement authorization, decide uploads/sessions, and confirm the deadline. Build a vertical business workflow rather than expanding infrastructure further.
 
 ## References
 

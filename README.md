@@ -14,7 +14,7 @@ Install Docker Desktop in **Linux containers** mode (Windows/macOS), or Docker E
 | MySQL / InnoDB | 8.4.11, official image + immutable digest |
 | Extension build packages | Debian snapshot `20261001T000000Z` |
 
-`containers.lock.json` records the literal references used in the Dockerfile/Compose file. The pinned indexes include Linux amd64 and arm64. Neither a full Docker build nor execution on those architectures has been verified on the current Windows host, which has no Docker engine. Host Docker/Compose/kernel versions are prerequisites, not a repository-managed hermetic OS.
+`containers.lock.json` records the literal references used in the Dockerfile/Compose file. The pinned indexes include Linux amd64 and arm64. The full build and integration/restore workflow passed on an Ubuntu 24.04 GitHub-hosted runner; arm64 and Docker Desktop execution are not yet tested. The current Windows host has no Docker engine. Host Docker/Compose/kernel versions are prerequisites, not a repository-managed hermetic OS.
 
 ## Start
 
@@ -44,7 +44,7 @@ docker compose exec -T app php tests/toolchain.php
 docker compose exec -T app php tests/database.php
 ```
 
-The database test checks the actual MySQL version, Yii2 transactions and rollback, foreign keys, schema discovery, and Chinese/emoji round trips. Uniquely named probe tables are cleaned up afterward. These are real database checks, not mocks; they await a running Docker host.
+The database test checks the actual MySQL version, Yii2 transactions and rollback, foreign keys, schema discovery, and Chinese/emoji round trips. Uniquely named probe tables are cleaned up afterward. These are real database checks, not mocks; they passed in GitHub Actions.
 
 ```powershell
 .\scripts\dev.ps1 persistence
@@ -52,7 +52,7 @@ The database test checks the actual MySQL version, Yii2 transactions and rollbac
 
 This writes a marker, replaces both containers while preserving the volume, then verifies the marker. `_infrastructure_probe` is infrastructure state, not one of the required domain tables.
 
-The GitHub Actions workflow additionally exports SQL and restores it into a fresh database volume. The workflow is defined, not claimed as already executed.
+The GitHub Actions workflow additionally exports SQL and restores it into a fresh database volume. All steps passed in [run 39046239319](https://github.com/hard-male-alliance/web-db-dev/actions/runs/39046239319). See the [validation record](docs/validation/local-environment.md) for the tested commit and scope.
 
 ## Data, stop, and cleanup
 
