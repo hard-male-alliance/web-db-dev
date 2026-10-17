@@ -1,0 +1,6 @@
+/.cache/
+/.temp/
+/vendor/
+/.env
+/auth.json
+/runtime/

@@ -1,0 +1,8 @@
+{
+  "php": "php:8.4.26-cli-bookworm@sha256:836ac6c672d1372a47c8fd61b625015bd07760f493fb2eaab2087636498a2b4b",
+  "composer": "composer:2.10.3@sha256:af98f42dfff7c68ba8d53c2164fd9fde1087b7d449514baa38c418b1f6bc4bac",
+  "mysql": "mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70",
+  "debianSnapshot": "20261001T000000Z",
+  "composeMinimum": "2.24.0",
+  "composeValidated": "5.6.0"
+}

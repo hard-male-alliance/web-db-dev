@@ -1,0 +1,60 @@
+name: Local environment
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      COMPOSE_PROJECT_NAME: web-db-ci-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Validate and start the pinned environment
+        run: |
+          docker compose config --quiet
+          docker compose up --build --wait --wait-timeout 240
+      - name: Check runtime, real database behavior, and HTTP response
+        run: |
+          docker compose exec -T app composer validate --strict --no-check-all
+          docker compose exec -T app composer check-platform-reqs
+          docker compose exec -T app composer audit
+          docker compose exec -T app php tests/toolchain.php
+          docker compose exec -T app php tests/database.php
+          curl --fail --retry 5 http://127.0.0.1:8080/ | grep 'Local infrastructure is ready'
+      - name: Verify persistence across container replacement
+        run: |
+          token=$(openssl rand -hex 16)
+          mkdir -p .cache
+          printf '%s' "$token" > .cache/persistence-token
+          docker compose exec -T app php scripts/database.php mark "$token"
+          docker compose down
+          docker compose up --wait --wait-timeout 240
+          docker compose exec -T app php scripts/database.php verify "$token"
+      - name: Export and restore into an empty volume
+        run: |
+          mkdir -p .cache/exports
+          token=$(cat .cache/persistence-token)
+          docker compose exec -T app php scripts/database.php mark "$token"
+          docker compose exec -T db sh /opt/project-tools/export.sh
+          docker compose cp db:/tmp/team-export.sql .cache/exports/install.sql
+          # Only this isolated CI project's disposable volume is removed.
+          docker compose down --volumes
+          docker compose up --wait --wait-timeout 240
+          docker compose cp .cache/exports/install.sql db:/tmp/team-import.sql
+          docker compose exec -T db sh /opt/project-tools/restore.sh
+          docker compose exec -T app php scripts/database.php verify "$token"
+          docker compose exec -T app php tests/database.php
+          curl --fail http://127.0.0.1:8080/ | grep 'Local infrastructure is ready'
+      - name: Collect diagnostics
+        if: failure()
+        run: docker compose logs --no-color --tail 150
+      - name: Clean up this CI project's containers and volumes
+        if: always()
+        run: docker compose down --volumes

@@ -1,0 +1,11 @@
+*
+!composer.json
+!composer.lock
+!toolchain.lock.json
+!containers.lock.json
+!infra/
+!infra/**
+!tests/
+!tests/**
+!scripts/
+!scripts/database.php
