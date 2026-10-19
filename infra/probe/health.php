@@ -9,8 +9,8 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 $context = stream_context_create(['http' => ['timeout' => 3]]);
-$body = @file_get_contents('http://127.0.0.1:8080/', false, $context);
-if ($body === false || !str_contains($body, 'Local infrastructure is ready')) {
+$body = @file_get_contents('http://127.0.0.1:8080/health', false, $context);
+if ($body === false || (json_decode($body, true)['status'] ?? null) !== 'ok') {
     fwrite(STDERR, "HTTP/database readiness failed.\n");
     exit(1);
 }

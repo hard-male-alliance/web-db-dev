@@ -11,6 +11,7 @@ services:
       DB_DATABASE: ${MYSQL_DATABASE:-team_website}
       DB_USERNAME: ${MYSQL_USER:-team}
       DB_PASSWORD: ${MYSQL_PASSWORD:-local-demo-only}
+      APP_RUNTIME_PATH: /tmp/star-workshop
       COMPOSER_HOME: /tmp/composer
       COMPOSER_CACHE_DIR: /tmp/composer-cache
     depends_on:

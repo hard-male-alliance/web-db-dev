@@ -29,16 +29,21 @@ jobs:
           docker compose exec -T app composer audit
           docker compose exec -T app php tests/toolchain.php
           docker compose exec -T app php tests/database.php
-          curl --fail --retry 5 http://127.0.0.1:8080/ | grep 'Local infrastructure is ready'
+          curl --fail --retry 5 http://127.0.0.1:8080/health
+      - name: Exercise the actual visitor, member, and administrator journeys
+        run: python tests/application_journey.py --base-url http://127.0.0.1:8080
       - name: Verify persistence across container replacement
         run: |
           token=$(openssl rand -hex 16)
           mkdir -p .cache
           printf '%s' "$token" > .cache/persistence-token
+          docker compose exec -T app php scripts/domain_snapshot.php > .cache/domain-before.json
           docker compose exec -T app php scripts/database.php mark "$token"
           docker compose down
           docker compose up --wait --wait-timeout 240
           docker compose exec -T app php scripts/database.php verify "$token"
+          docker compose exec -T app php scripts/domain_snapshot.php > .cache/domain-recreated.json
+          diff -u .cache/domain-before.json .cache/domain-recreated.json
       - name: Export and restore into an empty volume
         run: |
           token=$(cat .cache/persistence-token)
@@ -50,7 +55,10 @@ jobs:
           python scripts/dev.py restore --confirm-restore
           docker compose exec -T app php scripts/database.php verify "$token"
           docker compose exec -T app php tests/database.php
-          curl --fail http://127.0.0.1:8080/ | grep 'Local infrastructure is ready'
+          docker compose exec -T app php scripts/domain_snapshot.php > .cache/domain-restored.json
+          diff -u .cache/domain-before.json .cache/domain-restored.json
+          curl --fail http://127.0.0.1:8080/health
+          python tests/application_journey.py --base-url http://127.0.0.1:8080
       - name: Collect diagnostics
         if: failure()
         run: docker compose logs --no-color --tail 150

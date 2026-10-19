@@ -1,6 +1,10 @@
-# Team website: reproducible local infrastructure
+# 星河工坊 · Team project archive
 
-**Current decision: local PHP + Yii2 + MySQL for the course demo.** No cloud account, paid database, Rust toolchain, or global PHP/MySQL installation is required. The current landing page verifies the infrastructure; it is not the finished website or Yii2 Advanced application.
+**A working server-rendered team website using PHP + Yii2 + MySQL.** Public pages show members, projects, updates, moderated messages, live project charts and six downloadable course submissions. The administration app supports team/member editing, own-profile editing, project/update publishing, moderation/replies and audit history. No cloud account or paid service is required.
+
+The repository uses Yii2 Advanced-style `common`, `frontend`, and `backend` applications with a single local HTTP router. Course materials are in `data/team/`; the fourteen-table real database export is `data/install.sql` (repeat-safe startup uses `data/schema.sql`).
+
+> Demo identities, student IDs and workload attribution are explicitly illustrative. Replace `DEMO01/02/03` and confirm actual member contributions before course hand-in. Contacting the teaching assistant and emailing the submission are human actions, not performed by the application.
 
 ## Prerequisites and pins
 
@@ -24,7 +28,14 @@ From the repository root:
 docker compose up --build --wait --wait-timeout 240
 ```
 
-Open **http://127.0.0.1:8080/**. The page reports PHP, Yii2, MySQL, and InnoDB after querying the database. Database failure returns HTTP 503. Both services have readiness checks.
+Open **http://127.0.0.1:8080/**; administration is **http://127.0.0.1:8080/admin/**. Startup installs missing schema and seeds only an entirely empty application database. Rebuild/restart never resets edited content or passwords. Both services have database-backed readiness checks (`/health` for HTTP).
+
+| Demo login | Password | Permissions |
+| --- | --- | --- |
+| `admin` | `admin123456` | Team/members, all projects/updates, moderation/replies, audit history |
+| `member` | `member123456` | Own profile, assigned/own-created projects and own updates |
+
+These known demonstration credentials must not be used for public deployment. Login is available through the top navigation. Public visitors cannot see drafts, pending/rejected messages or private email addresses.
 
 Cross-platform Python commands (startup also runs checks):
 
@@ -63,7 +74,7 @@ docker compose down
 
 Normal `down` removes containers/network but **keeps the database volume**. MySQL data stays in Docker-managed project-scoped storage, not a host MySQL installation. Set `COMPOSE_PROJECT_NAME` and a different `APP_PORT` for simultaneous independent checkouts.
 
-The app uses a non-root user, read-only root filesystem, and temporary `/tmp`. Dependencies are installed inside the image. Host `vendor/`, `.cache/`, `.env`, `.git/`, and documents are excluded from the build context. Source is copied, so rebuild after editing it.
+The app uses a non-root user, read-only root filesystem, and temporary `/tmp`. Dependencies are installed inside the image. Host `vendor/`, `.cache/`, `.env`, `.git/`, and research documents are excluded from the build context; the reviewed `data/team/` PDFs are included for downloads. Source is copied, so rebuild after editing it.
 
 **Destructive reset:** `docker compose down --volumes` permanently deletes this project's database volume. Export first; never use it for routine shutdown. MySQL initialization variables only apply to an empty volume; editing `.env` does not rotate existing accounts/passwords.
 
@@ -79,7 +90,7 @@ python scripts/dev.py restore --path .cache/exports/install.sql --confirm-restor
 
 Import may overwrite tables/data. Review the dump and target first; the wrapper does not make a backup automatically. Validate restoration into a separate/empty database. The export assumes InnoDB tables without concurrent schema changes; it does not recreate accounts/server configuration or include routines/events by default.
 
-For course hand-in, deliberately export using `--path data/install.sql`, review the result for personal data/secrets, then include it with the submission. Routine backups stay ignored under `.cache/`.
+`data/install.sql` is a real MySQL 8.4.11 dump of a pristine seeded demonstration database, supplied for course hand-in. It contains `DROP TABLE` statements: restore only into a dedicated empty database, after reviewing/backing up the target. Safe repeated startup instead uses `scripts/install.php` + `data/schema.sql`. Never replace the latter with a destructive dump. To refresh the hand-in dump, export a dedicated pristine demo database and review it for personal data/secrets. Routine backups stay ignored under `.cache/`.
 
 Portable Docker commands (create the host `.cache/exports` directory first):
 
@@ -181,7 +192,33 @@ not full database behavior. Native `vendor/` is never copied into the Docker ima
 
 Routine reproduction uses `composer install`, not `update`. Change versions deliberately and keep `.php-version`, `toolchain.lock.json`, Composer requirements/lock, `containers.lock.json`, Dockerfile and Compose references aligned. Refresh snapshot/CA pins intentionally. Run runtime, database, HTTP, persistence, and fresh-restore checks after updates; pinning does not replace security maintenance. Never disable TLS/hash validation to fix a download.
 
-## Documentation and next work
+## Native business application
+
+With an existing MySQL 8.4 database/account, set `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` in the process environment and run:
+
+```sh
+python setup.py
+python scripts/serve.py --port 8080
+```
+
+The server binds only to `127.0.0.1`; native runtime/session/log files stay in `.temp/runtime/`. It uses the same installer/router as Docker. The native command does not read `.env` (Compose does). Native MySQL installation is optional; Docker remains the canonical reproduction path.
+
+Sessions are shared between frontend/backend within one instance and expire after one hour. Container replacement clears temporary sessions (users log in again), not database content. No user file-upload endpoint is exposed; submission downloads are restricted to reviewed local PDFs under `data/team/`.
+
+## Application acceptance and course deliverables
+
+```sh
+# Run against a disposable demonstration database: this creates/edits test records.
+python tests/application_journey.py --base-url http://127.0.0.1:8080
+# Regenerate all six course PDFs from their source documents.
+python scripts/build_submissions.py
+```
+
+The HTTP journey uses real cookies/CSRF tokens and MySQL-backed actions, not mocked controllers. See `docs/validation/application.md` for exact coverage and results. The PDF builder requires ReportLab (`pip install reportlab` in a suitable document-generation environment); the app itself does not depend on Python packages. See `docs/course/` for editable source documents, deployment/restoration instructions and explicit hand-in limitations.
+
+A real browser walkthrough is included at `data/team/星河工坊_操作演示.webm`. To reproduce it against a disposable demo database, install Playwright/Chromium in your tooling environment and run `node scripts/record_walkthrough.cjs http://127.0.0.1:8080`. It creates a marked update and message, records publication/moderation/download, and checks desktop/mobile rendering plus browser errors. It is intentionally not a production-data test.
+
+## Documentation
 
 - [Current architecture and decisions](docs/architecture-and-decisions.md)
 - [Course assignment summary](docs/internet-database-development-assignments.md)
@@ -189,4 +226,4 @@ Routine reproduction uses `composer install`, not `update`. Change versions deli
 - [D1 investigation](docs/research/yii2-d1-feasibility.md)
 - [Managed MySQL investigation](docs/research/managed-mysql-options.md)
 
-Next: Yii2 Advanced scaffolding, the business schema, authentication/authorization, and the team website. Upload/session persistence will be decided with those features. PHP's built-in server is intentional for local demo/development, not production hosting.
+PHP's built-in server is intentional for local demo/development, not production hosting. Public hosting requires TLS, independent secrets/credentials, a production web server, retention/abuse policy and a separate deployment security review.

@@ -17,7 +17,7 @@ function infrastructureDatabase(): yii\db\Connection
             getenv('DB_DATABASE') ?: 'team_website',
         ),
         'username' => getenv('DB_USERNAME') ?: 'team',
-        'password' => getenv('DB_PASSWORD') ?: 'local-demo-only',
+        'password' => getenv('DB_PASSWORD') === false ? 'local-demo-only' : getenv('DB_PASSWORD'),
         'charset' => 'utf8mb4',
         'attributes' => [PDO::ATTR_TIMEOUT => 3],
     ]);

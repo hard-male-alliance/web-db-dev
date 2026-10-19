@@ -25,8 +25,15 @@ COPY toolchain.lock.json containers.lock.json ./
 COPY infra/probe ./infra/probe
 COPY tests ./tests
 COPY scripts/database.php ./scripts/database.php
+COPY scripts/domain_snapshot.php ./scripts/domain_snapshot.php
+COPY scripts/install.php ./scripts/install.php
+COPY common ./common
+COPY frontend ./frontend
+COPY backend ./backend
+COPY data ./data
+COPY infra/docker/start.sh ./infra/docker/start.sh
 RUN useradd --uid 1000 --create-home app
 USER app
 EXPOSE 8080
 # Development/demo only; replace this server when defining production requirements.
-CMD ["php", "-S", "0.0.0.0:8080", "-t", "/app/infra/probe"]
+CMD ["sh", "/app/infra/docker/start.sh"]

@@ -1,6 +1,7 @@
 """Cross-platform Docker lifecycle, checks, persistence and SQL transfer."""
 
 import argparse
+import json
 from pathlib import Path
 import re
 import subprocess
@@ -23,12 +24,15 @@ def check():
     for test in ("toolchain", "database"):
         compose("exec", "-T", "app", "php", f"tests/{test}.php")
     binding = compose("port", "app", "8080", capture=True)
+    with urllib.request.urlopen(f"http://{binding}/health", timeout=15) as response:
+        if response.status != 200 or json.load(response).get("status") != "ok":
+            raise RuntimeError("Application database readiness failed.")
     with urllib.request.urlopen(f"http://{binding}/", timeout=15) as response:
         body = response.read()
-        if (response.status != 200 or b"Local infrastructure is ready" not in body
+        if (response.status != 200 or "星河工坊".encode() not in body
                 or not body.lstrip().lower().startswith(b"<!doctype html>")):
-            raise RuntimeError("Browser-facing infrastructure response failed.")
-    print(f"PASS HTTP -> PHP -> Yii2 -> MySQL: http://{binding}/")
+            raise RuntimeError("Browser-facing application response failed.")
+    print(f"PASS HTTP -> PHP -> Yii2 -> MySQL team website: http://{binding}/")
 
 
 def project_path(value):
@@ -59,9 +63,14 @@ def main(argv=None):
             check()
         elif args.task == "persistence":
             token = uuid.uuid4().hex
+            before = compose("exec", "-T", "app", "php", "scripts/domain_snapshot.php", capture=True)
             compose("exec", "-T", "app", "php", "scripts/database.php", "mark", token)
             compose("up", "-d", "--force-recreate", "--wait", "--wait-timeout", "240", "db", "app")
             compose("exec", "-T", "app", "php", "scripts/database.php", "verify", token)
+            after = compose("exec", "-T", "app", "php", "scripts/domain_snapshot.php", capture=True)
+            if json.loads(before) != json.loads(after):
+                raise RuntimeError("Application data changed during container replacement.")
+            print("PASS all domain rows survived container replacement.")
             check()
         elif args.task == "export":
             target = project_path(args.path)

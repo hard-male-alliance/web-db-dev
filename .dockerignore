@@ -9,4 +9,15 @@
 !tests/**
 !scripts/
 !scripts/database.php
+!scripts/domain_snapshot.php
+!scripts/install.php
+!common/
+!common/**
+!frontend/
+!frontend/**
+!backend/
+!backend/**
+!data/
+!data/**
 **/__pycache__/
+**/web/assets/????????/

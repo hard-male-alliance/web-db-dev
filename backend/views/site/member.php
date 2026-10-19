@@ -1,0 +1,5 @@
+<?php
+/** Server-rendered presentation for the team archive. */
+use yii\helpers\Html;
+?>
+<?php use yii\widgets\ActiveForm; $this->title = '编辑成员'; ?><div class="page-heading compact"><span class="eyebrow">STUDIO CONTENT</span><h1>编辑成员</h1><p>维护成员公开资料，不涉及登录凭据。</p></div><section class="panel editor-panel"><?php $activeForm = ActiveForm::begin(['enableClientScript'=>false,'enableClientValidation'=>false]); ?><?= $activeForm->errorSummary($model) ?><?= $activeForm->field($model,'name')->input('text')->label('姓名') ?><?= $activeForm->field($model,'title')->input('text')->label('角色 / 职责') ?><?= $activeForm->field($model,'bio')->textarea(['rows'=>7])->label('个人简介') ?><?= $activeForm->field($model,'email')->input('email')->label('电子邮箱') ?><?= $activeForm->field($model,'avatar_color')->input('color')->label('头像颜色（#RRGGBB）') ?><?= $activeForm->field($model,'sort_order')->input('number')->label('展示顺序') ?><div class="button-row"><?= Html::submitButton('保存更改 ✓',['class'=>'button']) ?><a class="text-link" href="/admin/">返回工作台</a></div><?php ActiveForm::end(); ?></section>
