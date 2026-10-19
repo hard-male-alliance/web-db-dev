@@ -91,7 +91,85 @@ docker compose cp .cache/exports/install.sql db:/tmp/team-import.sql
 docker compose exec -T db sh /opt/project-tools/restore.sh
 ```
 
-## Optional native Windows PHP
+## Native PHP environment: Windows, Linux and macOS
+
+Requires **Python 3.12+**, with no pip packages. Setup downloads precompiled PHP,
+Composer and CA certificates; it never compiles PHP or installs a global runtime.
+Windows x64 also requires the Microsoft Visual C++ 2015-2022 x64 runtime.
+Linux/macOS support x64 and arm64. MySQL remains managed by Docker.
+
+```sh
+python setup.py
+source ./activate.sh  # Bash or Zsh; source, do not execute
+php --version
+composer --version
+python scripts/check.py
+deactivate
+```
+
+PowerShell on any supported OS:
+
+```powershell
+python setup.py
+. ./activate.ps1
+php --version
+composer --version
+python scripts/check.py
+deactivate
+```
+
+Activation changes only the current shell: PHP executable lookup, `PHPRC`, isolated
+INI scanning, and project-local Composer home/cache. Repeated activation does not
+stack PATH entries; `deactivate` restores previous values, including unset variables.
+It does not start services or modify shell profiles. Plain POSIX `sh` is not supported.
+
+Setup installs locked project dependencies by default. Use `python setup.py --skip-composer`
+to provision just the runtime. Repeated setup reuses the environment and download cache;
+failed runtime replacement restores the previous environment. If setup is forcibly
+interrupted, remove the stale `.cache/setup.lock` directory before retrying. Stop
+this environment's PHP processes before replacing its runtime.
+
+`.phpenv/` contains `bin/php` (Windows: `bin/php.exe`), Composer launchers,
+`composer.phar`, `php.ini`, `conf.d/`, certificates and a `ready.json` manifest.
+It is disposable and ignored by Git, like `.venv`; recreate after moving a checkout.
+Download caches stay under `.cache/`, staging under `.temp/`, and Yii2 dependencies
+under the existing ignored `vendor/`. This is not an OS or filesystem sandbox.
+
+| Platform | Binary source | PHP pin |
+| --- | --- | --- |
+| Windows x64 | Official windows.php.net NTS archive | 8.4.26 |
+| Linux x64 / arm64 | Swoole build-static-php v1.18.1 | 8.4.23 |
+| macOS x64 / arm64 | Swoole build-static-php v1.18.1 | 8.4.23 |
+| Docker | Existing official PHP CLI image | 8.4.26 |
+
+Each archive is SHA-256 checked; setup verifies the running PHP version and required
+extensions. Unix packages are third-party precompiled binaries, not official PHP
+binaries. Composer accepts `~8.4.23` (8.4.23 through 8.4.x); exact platform download
+pins live in `toolchain.lock.json`. `.php-version` remains the Docker/Windows pin,
+not a cross-platform version switcher. Native Linux binaries are statically linked;
+macOS binaries still depend on system libraries.
+
+Without activation:
+
+```sh
+python scripts/php.py tests/toolchain.php
+python scripts/composer.py install --no-interaction --prefer-dist
+python scripts/check.py
+python scripts/dev.py up
+python scripts/dev.py persistence
+python scripts/dev.py export --path .cache/exports/install.sql
+# Destructive import: review the dump and target first.
+python scripts/dev.py restore --path .cache/exports/install.sql --confirm-restore
+python scripts/dev.py down
+python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+GitHub Actions `PHP virtual environment` tests clean/repeat setup, shell activation,
+Composer, Yii2 and HTTP on Windows x64, Linux x64/arm64 and macOS x64/arm64, in
+checkouts with spaces in their paths. `Local environment` retains Docker/MySQL
+persistence and fresh-volume restoration and exercises the Python entry points.
+
+### Legacy PowerShell entry points
 
 For editor support and PHP-only checks without Docker:
 
@@ -101,7 +179,9 @@ For editor support and PHP-only checks without Docker:
 .\scripts\check.ps1
 ```
 
-This downloads pinned PHP/Composer/CA artifacts into `.cache/`, checks SHA-256, and uses project-local wrappers without changing global PATH. Windows x64 and Microsoft Visual C++ 2015-2022 x64 runtime are prerequisites. It does **not** install MySQL. `.php-version` is a hint, not a version switcher; Composer's `config.platform.php` affects dependency resolution, not the real runtime.
+These commands now delegate to Python and use `.phpenv`; `dev.ps1` also preserves
+its existing `-Path` and `-ConfirmRestore` arguments. Composer's `config.platform.php`
+affects dependency resolution, not the real runtime. No native MySQL is installed.
 
 Native `check.ps1` verifies extensions, Yii2 model validation, and a temporary loopback HTTP rendering/escaping fixture, not full database behavior. Native `vendor/` is ignored and never copied into the Docker image.
 

@@ -1,9 +1,30 @@
 {
-  "platform": "windows-x64",
   "php": {
     "version": "8.4.26",
     "url": "https://windows.php.net/downloads/releases/php-8.4.26-nts-Win32-vs17-x64.zip",
-    "sha256": "da68394f9193b7f6b89d0c76861a4034ae10efee7fd55a7255d8118c2acf70d7"
+    "sha256": "da68394f9193b7f6b89d0c76861a4034ae10efee7fd55a7255d8118c2acf70d7",
+    "platforms": {
+      "linux-x64": {
+        "version": "8.4.23",
+        "url": "https://github.com/swoole/build-static-php/releases/download/v1.18.1/php-cli-v8.4.23-linux-x64.tar.xz",
+        "sha256": "904ea58b495ce3334d3b2213750fbffcde1470cb3f2c5b94946211049e5ebd54"
+      },
+      "linux-arm64": {
+        "version": "8.4.23",
+        "url": "https://github.com/swoole/build-static-php/releases/download/v1.18.1/php-cli-v8.4.23-linux-arm64.tar.xz",
+        "sha256": "f7a8ead40efda03416fb7491fca44bc3eb7c94a3da08bc52fbfc6d58a0b873cd"
+      },
+      "darwin-x64": {
+        "version": "8.4.23",
+        "url": "https://github.com/swoole/build-static-php/releases/download/v1.18.1/php-cli-v8.4.23-macos-x64.tar.xz",
+        "sha256": "f74ab53a470da26fb43be47a0e553f95be21aa3b0bbdcfbf1c546ccb3f31f06b"
+      },
+      "darwin-arm64": {
+        "version": "8.4.23",
+        "url": "https://github.com/swoole/build-static-php/releases/download/v1.18.1/php-cli-v8.4.23-macos-arm64.tar.xz",
+        "sha256": "1358a90be279099cae569b5c9e787487396fe9418c446af7e0d4328925fedfa5"
+      }
+    }
   },
   "composer": {
     "version": "2.10.3",

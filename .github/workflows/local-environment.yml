@@ -16,14 +16,16 @@ jobs:
       COMPOSE_PROJECT_NAME: web-db-ci-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
       - name: Validate and start the pinned environment
         run: |
           docker compose config --quiet
-          docker compose up --build --wait --wait-timeout 240
+          python scripts/dev.py up
       - name: Check runtime, real database behavior, and HTTP response
         run: |
-          docker compose exec -T app composer validate --strict --no-check-all
-          docker compose exec -T app composer check-platform-reqs
+          python scripts/dev.py check
           docker compose exec -T app composer audit
           docker compose exec -T app php tests/toolchain.php
           docker compose exec -T app php tests/database.php
@@ -39,16 +41,13 @@ jobs:
           docker compose exec -T app php scripts/database.php verify "$token"
       - name: Export and restore into an empty volume
         run: |
-          mkdir -p .cache/exports
           token=$(cat .cache/persistence-token)
           docker compose exec -T app php scripts/database.php mark "$token"
-          docker compose exec -T db sh /opt/project-tools/export.sh
-          docker compose cp db:/tmp/team-export.sql .cache/exports/install.sql
+          python scripts/dev.py export
           # Only this isolated CI project's disposable volume is removed.
           docker compose down --volumes
           docker compose up --wait --wait-timeout 240
-          docker compose cp .cache/exports/install.sql db:/tmp/team-import.sql
-          docker compose exec -T db sh /opt/project-tools/restore.sh
+          python scripts/dev.py restore --confirm-restore
           docker compose exec -T app php scripts/database.php verify "$token"
           docker compose exec -T app php tests/database.php
           curl --fail http://127.0.0.1:8080/ | grep 'Local infrastructure is ready'

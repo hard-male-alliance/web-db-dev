@@ -1,11 +1,11 @@
 # Current architecture and decisions
 
-Updated: 2026-10-17 (Asia/Singapore).
+Updated: 2026-10-19 (Asia/Singapore).
 Status: local infrastructure configured; native PHP checks and the complete Ubuntu GitHub Actions build/database/persistence/restore workflow passed.
 
 ## 1. Final direction
 
-**Demonstrate locally with PHP + Yii2 + MySQL/InnoDB. Docker Compose is the canonical reproduction path; project-local Windows PHP is an optional editor/test convenience.**
+**Demonstrate locally with PHP + Yii2 + MySQL/InnoDB. Docker Compose is the canonical reproduction path; project-local PHP on Windows, Linux and macOS is an optional editor/test convenience.**
 
 The reviewed course material asks for a working demonstration and deployment/restoration documentation. No public-hosting requirement was identified. Confirm any additional verbal requirements separately. No Cloud SQL, Cloudflare, Durable Objects, Rust, or cloud deployment is required now, and no paid resources were provisioned.
 
@@ -39,7 +39,7 @@ Proposed product: a **team project archive** showing members, projects, collabor
 | Orchestration | Compose 2.24+ | Configuration parsed with 5.6.0; engine absent locally |
 | Source/checks | GitHub + GitHub Actions | No cloud deployment or production secrets |
 
-`composer.lock` fixes packages; `containers.lock.json` records image-index digests and the Debian package snapshot; `toolchain.lock.json` pins native Windows downloads. Literal image references live in Dockerfile/Compose. OS/kernel/Docker remain prerequisites, not a hermetic host build.
+`composer.lock` fixes packages; `containers.lock.json` records image-index digests and the Debian package snapshot; `toolchain.lock.json` pins native platform downloads. Literal image references live in Dockerfile/Compose. OS/kernel/Docker remain prerequisites, not a hermetic host build.
 
 PHP renders HTML on the server. Yii2 Advanced's `frontend` and `backend` mean public/admin applications, both server-side PHP, not a browser/API split.
 
@@ -74,7 +74,7 @@ The current probe queries MySQL and renders HTML with Yii2; database failure pro
 
 Start with `docker compose up --build --wait --wait-timeout 240`, or `scripts/dev.ps1 up` for startup plus checks. [README](../README.md) covers startup, ports, logs, persistence checks, export/import, cleanup, and native PHP.
 
-Native artifacts and host-side backups stay under `.cache/`; `.temp/` is available for temporary work. Docker owns its image/container/volume state, isolated by Compose project identity. No global PHP/MySQL installation or cloud account is needed. Rebuild the app image after source changes.
+Native runtimes live under `.phpenv/`; download caches and host-side backups stay under `.cache/`; `.temp/` is available for temporary work. Docker owns its image/container/volume state, isolated by Compose project identity. No global PHP/MySQL installation or cloud account is needed. Rebuild the app image after source changes.
 
 A volume is not a backup. Export an InnoDB single-transaction SQL dump and test restoration into an empty database. Copy bytes with Docker rather than depending on PowerShell text encoding. Final `/data/install.sql` is an intentional reviewed hand-in, not an automatic commit of local data. Upload/session persistence will be chosen alongside those application features.
 
@@ -97,6 +97,38 @@ The completed website must additionally pass actual login/edit/publish/message/m
 D1 helper transport is official, but audited PDO wrappers do not transparently preserve Yii2 transactions; see [D1 research](research/yii2-d1-feasibility.md). Managed MySQL, including Aiven/Cloud SQL, remains viable if public hosting becomes necessary; see [database research](research/managed-mysql-options.md). PostgreSQL/SQLite are not inherently unsuitable; MySQL was chosen for course/tooling alignment. Rust/DO/Containers are deferred, not rejected.
 
 Next: reproduce on a team member's Docker host, scaffold Yii2 Advanced, define team identity/schema/features, choose a theme, implement authorization, decide uploads/sessions, and confirm the deadline. Build a vertical business workflow rather than expanding infrastructure further.
+
+## 8. Python infrastructure and native environment
+
+Host orchestration now uses Python 3.12+ standard library only. Root `setup.py` is
+a project initializer, not a Python packaging entry point. Shell scripts contain
+activation or backwards-compatible forwarding; Docker-internal MySQL helpers
+remain POSIX shell because they execute within the Linux database image.
+
+The disposable `.phpenv` owns PHP, Composer, INI and certificates. Activation
+follows the practical venv model: prepend its bin directory, select its configuration
+and restore shell state on deactivation. Dependencies remain in project `vendor/`,
+preserving application paths. This does not provide OS sandboxing.
+
+All platforms download binary releases. Requiring Unix users to build PHP merely
+because PHP itself does not publish their binaries adds unnecessary friction.
+Swoole build-static-php v1.18.1 supplies Linux/macOS x64/arm64 with PDO MySQL;
+Windows retains the official NTS archive. NativePHP binaries were considered but
+their published extension list lacks PDO MySQL. Unix PHP is pinned to 8.4.23;
+Windows/Docker remain at 8.4.26. Composer accepts 8.4.23 through 8.4.x. Tests check
+the actual platform pin rather than claiming identical builds across producers.
+
+Downloads use HTTPS and locked SHA-256 hashes. Extraction rejects path escapes
+and links. Runtime preparation is staged under `.temp`, validated at its final
+location and rolled back on failure; a setup lock prevents competing writes.
+Existing database volume and restore-confirmation contracts remain unchanged.
+These are bounded safeguards, not a policy against third-party binary producers.
+
+References:
+- [Python venv](https://docs.python.org/3/library/venv.html)
+- [Swoole binary release](https://github.com/swoole/build-static-php/releases/tag/v1.18.1)
+- [NativePHP extensions](https://github.com/NativePHP/php-bin/blob/e0c212d36422e5aa1f7357ec0524d99de8ee79bf/php-extensions.txt)
+- [GitHub runner selection](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/choose-the-runner-for-a-job)
 
 ## References
 

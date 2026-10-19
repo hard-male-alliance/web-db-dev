@@ -8,7 +8,12 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 require dirname(__DIR__) . '/vendor/yiisoft/yii2/Yii.php';
 
 $lock = json_decode(file_get_contents(dirname(__DIR__) . '/toolchain.lock.json'), true, flags: JSON_THROW_ON_ERROR);
-if (PHP_VERSION !== $lock['php']['version']) {
+$version = $lock['php']['version'];
+if (getenv('PHPENV') && PHP_OS_FAMILY !== 'Windows') {
+    $arch = in_array(php_uname('m'), ['aarch64', 'arm64'], true) ? 'arm64' : 'x64';
+    $version = $lock['php']['platforms'][strtolower(PHP_OS_FAMILY) . '-' . $arch]['version'];
+}
+if (PHP_VERSION !== $version) {
     throw new RuntimeException('PHP runtime does not match toolchain.lock.json.');
 }
 foreach (['curl', 'fileinfo', 'gd', 'intl', 'mbstring', 'openssl', 'pdo_mysql'] as $extension) {

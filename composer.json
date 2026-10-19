@@ -4,7 +4,7 @@
   "type": "project",
   "license": "proprietary",
   "require": {
-    "php": "8.4.26",
+    "php": "~8.4.23",
     "ext-curl": "*",
     "ext-fileinfo": "*",
     "ext-gd": "*",
@@ -16,11 +16,18 @@
     "yiisoft/yii2": "2.0.55"
   },
   "repositories": [
-    { "type": "composer", "url": "https://asset-packagist.org" }
+    {
+      "type": "composer",
+      "url": "https://asset-packagist.org"
+    }
   ],
   "config": {
-    "platform": { "php": "8.4.26" },
-    "allow-plugins": { "yiisoft/yii2-composer": true },
+    "platform": {
+      "php": "8.4.23"
+    },
+    "allow-plugins": {
+      "yiisoft/yii2-composer": true
+    },
     "sort-packages": true
   },
   "scripts": {

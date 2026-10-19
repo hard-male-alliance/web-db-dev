@@ -4,3 +4,5 @@
 /.env
 /auth.json
 /runtime/
+/.phpenv/
+__pycache__/

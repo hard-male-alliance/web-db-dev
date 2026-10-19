@@ -1,0 +1,52 @@
+name: PHP virtual environment
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2025, ubuntu-24.04, ubuntu-24.04-arm, macos-15-intel, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: project with spaces
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          path: project with spaces
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Test infrastructure without an existing PHP environment
+        run: python -m unittest discover -s tests -p "test_*.py" -v
+      - name: Download PHP and install locked dependencies
+        run: python setup.py
+      - name: Repeat initialization to verify reuse
+        run: python setup.py
+      - name: Test actual activation, deactivation and CLI resolution
+        run: python -m unittest discover -s tests -p "test_*.py" -v
+      - name: Verify runtime, extensions, Yii2 and HTTP escaping
+        run: python scripts/check.py
+      - name: Exercise legacy PowerShell entry points
+        shell: pwsh
+        run: |
+          ./scripts/php.ps1 --version
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ./scripts/composer.ps1 --version
+          exit $LASTEXITCODE
+      - name: Upload HTTP diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: phpenv-${{ matrix.os }}
+          path: project with spaces/.cache/check/
+          if-no-files-found: ignore
