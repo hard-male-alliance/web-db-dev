@@ -19,7 +19,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 ENV = ROOT / ".phpenv"
 REQUIRED = ("curl", "fileinfo", "gd", "intl", "mbstring", "openssl", "pdo_mysql",
-            "pdo_sqlite", "sqlite3", "zip")
+            "zip")
 
 
 def run(args, *, cwd=ROOT, **kwargs):
@@ -121,7 +121,7 @@ def configure(stage, windows):
              f'curl.cainfo="{ca}"', f'openssl.cafile="{ca}"']
     if windows:
         lines += [f'extension_dir="{(ENV / "bin/ext").as_posix()}"']
-        lines += [f"extension={extension}" for extension in REQUIRED]
+        lines += [f"extension={extension}" for extension in (*REQUIRED, "pdo_sqlite", "sqlite3")]
     (stage / "php.ini").write_text("\n".join(lines) + "\n", encoding="utf-8")
     (stage / "conf.d").mkdir()
     # Composer's @php and child processes use this environment's PHP via PATH.
@@ -137,8 +137,11 @@ def validate(version):
     result = run([ENV / "bin" / ("php.exe" if os.name == "nt" else "php"), "-r", code],
                  env=environment(), capture_output=True, text=True)
     actual, extensions = json.loads(result.stdout)
-    if actual != version or set(REQUIRED) - set(extensions):
-        raise RuntimeError(f"PHP runtime mismatch: {actual}; missing {set(REQUIRED) - set(extensions)}")
+    if actual != version:
+        raise RuntimeError(f"PHP runtime mismatch: expected {version}, got {actual}")
+    missing = set(REQUIRED) - {extension.lower() for extension in extensions}
+    if missing:
+        raise RuntimeError(f"PHP {actual} is missing required extensions: {missing}")
     run([ENV / "bin" / ("php.exe" if os.name == "nt" else "php"), ENV / "composer.phar", "--version"], env=environment())
 
 

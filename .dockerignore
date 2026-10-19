@@ -9,3 +9,4 @@
 !tests/**
 !scripts/
 !scripts/database.php
+**/__pycache__/

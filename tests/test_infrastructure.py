@@ -158,7 +158,10 @@ test "$PATH" = "$old_path"
 test "$PHPRC" = 'original configuration'
 test "${PHP_INI_SCAN_DIR+x}" != x
 '''
-        subprocess.run(["bash", "-c", script], cwd=phpenv.ROOT, check=True)
+        for shell in ("bash", "zsh"):
+            if shutil.which(shell):
+                with self.subTest(shell=shell):
+                    subprocess.run([shell, "-c", script], cwd=phpenv.ROOT, check=True)
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ if [ ! -f "$_phpenv_root/.phpenv/ready.json" ]; then
     unset _phpenv_script _phpenv_root
     return 1
 fi
-if declare -F deactivate >/dev/null 2>&1 || typeset -f deactivate >/dev/null 2>&1; then
+if typeset -f deactivate >/dev/null 2>&1; then
     deactivate
 fi
 
