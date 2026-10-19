@@ -1,7 +1,7 @@
 # Current architecture and decisions
 
 Updated: 2026-10-19 (Asia/Singapore).
-Status: local infrastructure configured; native PHP checks and the complete Ubuntu GitHub Actions build/database/persistence/restore workflow passed.
+Status: Python infrastructure implemented; native Windows/Linux/macOS checks on five runner/architecture combinations and the Ubuntu Docker database/persistence/restore workflow passed. See the validation record for tested commits.
 
 ## 1. Final direction
 
