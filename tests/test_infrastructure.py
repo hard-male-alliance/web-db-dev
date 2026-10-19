@@ -145,6 +145,8 @@ class RuntimeJourneys(unittest.TestCase):
             self.assertEqual(Path(result.stdout).resolve(), other.resolve())
             subprocess.run([str(phpenv.php()), str(phpenv.ENV / "composer.phar"), "--version"],
                            cwd=other, env=phpenv.environment(), check=True)
+            subprocess.run([sys.executable, str(phpenv.ROOT / "scripts/composer.py"), "--version"],
+                           cwd=other, check=True)
 
     def test_powershell_activation_roundtrip(self):
         powershell = shutil.which("pwsh") or shutil.which("powershell")

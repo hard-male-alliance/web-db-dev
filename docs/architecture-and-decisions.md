@@ -72,7 +72,7 @@ The current probe queries MySQL and renders HTML with Yii2; database failure pro
 
 ## 5. Reproduction and data contract
 
-Start with `docker compose up --build --wait --wait-timeout 240`, or `scripts/dev.ps1 up` for startup plus checks. [README](../README.md) covers startup, ports, logs, persistence checks, export/import, cleanup, and native PHP.
+Start with `docker compose up --build --wait --wait-timeout 240`, or `python scripts/dev.py up` for startup plus checks. [README](../README.md) covers startup, ports, logs, persistence checks, export/import, cleanup, and native PHP.
 
 Native runtimes live under `.phpenv/`; download caches and host-side backups stay under `.cache/`; `.temp/` is available for temporary work. Docker owns its image/container/volume state, isolated by Compose project identity. No global PHP/MySQL installation or cloud account is needed. Rebuild the app image after source changes.
 
@@ -101,8 +101,9 @@ Next: reproduce on a team member's Docker host, scaffold Yii2 Advanced, define t
 ## 8. Python infrastructure and native environment
 
 Host orchestration now uses Python 3.12+ standard library only. Root `setup.py` is
-a project initializer, not a Python packaging entry point. Shell scripts contain
-activation or backwards-compatible forwarding; Docker-internal MySQL helpers
+a project initializer, not a Python packaging entry point. It is the sole
+initialization entry point on all platforms. Old PowerShell forwarding scripts
+have been removed; root shell scripts only activate the environment. Docker-internal MySQL helpers
 remain POSIX shell because they execute within the Linux database image.
 
 The disposable `.phpenv` owns PHP, Composer, INI and certificates. Activation

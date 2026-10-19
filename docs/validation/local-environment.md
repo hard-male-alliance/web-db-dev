@@ -47,7 +47,7 @@ The host has no Docker Engine/Desktop, so container execution was verified remot
 
 ## Reproduction
 
-Use the [README](../../README.md) for startup and SQL export/import. `scripts/dev.ps1 check` exercises the running environment; `scripts/dev.ps1 persistence` verifies volume retention across container replacement. Re-run the complete GitHub Actions workflow after infrastructure or dependency changes, especially the fresh-volume restore step.
+Use the [README](../../README.md) for startup and SQL export/import. `python scripts/dev.py check` exercises the running environment; `python scripts/dev.py persistence` verifies volume retention across container replacement. Re-run the complete GitHub Actions workflow after infrastructure or dependency changes, especially the fresh-volume restore step.
 
 This record is scoped to the tested commit, not a perpetual security or compatibility guarantee. Documentation-only updates following this run do not change the tested executable configuration.
 
@@ -80,7 +80,8 @@ no pre-existing `.phpenv` or `vendor`. The actual journey is:
    Windows skips only the Unix-shell test.
 6. Verify PHP/extension/Yii2 versions, validate a Yii2 model, and start a real local
    PHP server to render and escape untrusted HTML through a Yii2 view.
-7. Execute the legacy PowerShell PHP and Composer entry points.
+7. Execute the legacy PowerShell PHP and Composer entry points (historical check;
+   those wrappers have since been removed in favor of the Python commands).
 
 The first native run failed because the initializer required optional `pdo_sqlite`
 from the old Windows extension list. All Unix runtime versions were already correct;

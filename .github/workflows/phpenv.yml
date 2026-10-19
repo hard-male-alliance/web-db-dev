@@ -36,13 +36,6 @@ jobs:
         run: python -m unittest discover -s tests -p "test_*.py" -v
       - name: Verify runtime, extensions, Yii2 and HTTP escaping
         run: python scripts/check.py
-      - name: Exercise legacy PowerShell entry points
-        shell: pwsh
-        run: |
-          ./scripts/php.ps1 --version
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          ./scripts/composer.ps1 --version
-          exit $LASTEXITCODE
       - name: Upload HTTP diagnostics
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

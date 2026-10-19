@@ -26,11 +26,11 @@ docker compose up --build --wait --wait-timeout 240
 
 Open **http://127.0.0.1:8080/**. The page reports PHP, Yii2, MySQL, and InnoDB after querying the database. Database failure returns HTTP 503. Both services have readiness checks.
 
-PowerShell convenience commands (startup also runs checks):
+Cross-platform Python commands (startup also runs checks):
 
-```powershell
-.\scripts\dev.ps1 up
-.\scripts\dev.ps1 check
+```sh
+python scripts/dev.py up
+python scripts/dev.py check
 ```
 
 Optionally copy `.env.example` to `.env` and change `APP_PORT` if port 8080 is occupied. Defaults work without `.env`. Example/default passwords are **local-demo-only**, not production secrets. HTTP binds only to loopback and MySQL has no published host port. Do not expose this configuration to a public/shared network.
@@ -46,8 +46,8 @@ docker compose exec -T app php tests/database.php
 
 The database test checks the actual MySQL version, Yii2 transactions and rollback, foreign keys, schema discovery, and Chinese/emoji round trips. Uniquely named probe tables are cleaned up afterward. These are real database checks, not mocks; they passed in GitHub Actions.
 
-```powershell
-.\scripts\dev.ps1 persistence
+```sh
+python scripts/dev.py persistence
 ```
 
 This writes a marker, replaces both containers while preserving the volume, then verifies the marker. `_infrastructure_probe` is infrastructure state, not one of the required domain tables.
@@ -69,17 +69,17 @@ The app uses a non-root user, read-only root filesystem, and temporary `/tmp`. D
 
 ## SQL export and restore
 
-PowerShell helpers preserve SQL bytes using `docker compose cp`, avoiding text-redirection encoding problems:
+Python helpers preserve SQL bytes using `docker compose cp`, avoiding text-redirection encoding problems:
 
-```powershell
-.\scripts\dev.ps1 export
+```sh
+python scripts/dev.py export
 # Default output: .cache/exports/install.sql
-.\scripts\dev.ps1 restore -Path .cache/exports/install.sql -ConfirmRestore
+python scripts/dev.py restore --path .cache/exports/install.sql --confirm-restore
 ```
 
 Import may overwrite tables/data. Review the dump and target first; the wrapper does not make a backup automatically. Validate restoration into a separate/empty database. The export assumes InnoDB tables without concurrent schema changes; it does not recreate accounts/server configuration or include routines/events by default.
 
-For course hand-in, deliberately export using `-Path data/install.sql`, review the result for personal data/secrets, then include it with the submission. Routine backups stay ignored under `.cache/`.
+For course hand-in, deliberately export using `--path data/install.sql`, review the result for personal data/secrets, then include it with the submission. Routine backups stay ignored under `.cache/`.
 
 Portable Docker commands (create the host `.cache/exports` directory first):
 
@@ -93,6 +93,7 @@ docker compose exec -T db sh /opt/project-tools/restore.sh
 
 ## Native PHP environment: Windows, Linux and macOS
 
+The only initialization entry point is root `setup.py` on every platform.
 Requires **Python 3.12+**, with no pip packages. Setup downloads precompiled PHP,
 Composer and CA certificates; it never compiles PHP or installs a global runtime.
 Windows x64 also requires the Microsoft Visual C++ 2015-2022 x64 runtime.
@@ -169,21 +170,12 @@ Composer, Yii2 and HTTP on Windows x64, Linux x64/arm64 and macOS x64/arm64, in
 checkouts with spaces in their paths. `Local environment` retains Docker/MySQL
 persistence and fresh-volume restoration and exercises the Python entry points.
 
-### Legacy PowerShell entry points
-
-For editor support and PHP-only checks without Docker:
-
-```powershell
-.\scripts\bootstrap.ps1
-.\scripts\composer.ps1 install --no-interaction --prefer-dist
-.\scripts\check.ps1
-```
-
-These commands now delegate to Python and use `.phpenv`; `dev.ps1` also preserves
-its existing `-Path` and `-ConfirmRestore` arguments. Composer's `config.platform.php`
-affects dependency resolution, not the real runtime. No native MySQL is installed.
-
-Native `check.ps1` verifies extensions, Yii2 model validation, and a temporary loopback HTTP rendering/escaping fixture, not full database behavior. Native `vendor/` is ignored and never copied into the Docker image.
+The former PowerShell wrappers under `scripts/` have been removed. Use `setup.py`
+for initialization and the Python commands above for ongoing tasks. Root
+`activate.ps1` and `activate.sh` only activate an initialized environment.
+Composer's `config.platform.php` affects dependency resolution, not the real runtime.
+Native `check.py` checks extensions, Yii2 validation and HTTP rendering/escaping,
+not full database behavior. Native `vendor/` is never copied into the Docker image.
 
 ## Upgrade discipline
 
