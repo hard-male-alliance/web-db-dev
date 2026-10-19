@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -103,6 +104,23 @@ class InfrastructureTests(unittest.TestCase):
                         self.fail("Concurrent setup permitted")
             self.assertFalse((root / ".cache/setup.lock").exists())
 
+    def test_failed_replacement_restores_previous_runtime(self):
+        with temporary_project() as root:
+            previous = root / ".phpenv"
+            previous.mkdir()
+            (previous / "keep").write_text("previous working environment")
+            archive = root / "php.zip"
+            with zipfile.ZipFile(archive, "w") as bundle:
+                bundle.writestr("php.exe", "replacement")
+            asset = {"version": "8.4.26", "url": "https://example.invalid/php", "sha256": "unused"}
+            (root / "toolchain.lock.json").write_text(json.dumps({"php": asset, "composer": asset, "caBundle": asset}))
+            with patch.object(phpenv, "ROOT", root), patch.object(phpenv, "ENV", previous), patch.object(phpenv, "platform_key", return_value="windows-x64"), patch.object(phpenv, "download", return_value=archive), patch.object(phpenv, "validate", side_effect=RuntimeError("Runtime cannot start")):
+                with self.assertRaisesRegex(RuntimeError, "Runtime cannot start"):
+                    phpenv.provision()
+            self.assertEqual((previous / "keep").read_text(), "previous working environment")
+            self.assertFalse((previous / "ready.json").exists())
+            self.assertEqual(list((root / ".temp").iterdir()), [])
+
     def test_export_boundary(self):
         self.assertTrue(project_path(".cache/exports/test.sql").is_relative_to(phpenv.ROOT))
         for path in ("..", "../outside.sql", str(phpenv.ROOT.parent / "outside.sql")):
@@ -112,11 +130,19 @@ class InfrastructureTests(unittest.TestCase):
 
 @unittest.skipUnless((phpenv.ENV / "ready.json").is_file(), "Run setup.py for real runtime journeys")
 class RuntimeJourneys(unittest.TestCase):
+    def test_runtime_reuse_needs_no_network(self):
+        with patch("urllib.request.urlopen", side_effect=AssertionError("Unexpected network")):
+            phpenv.provision()
+
     def test_php_and_composer_outside_project(self):
         with temporary_project() as other:
             result = subprocess.run([str(phpenv.php()), "-r", "echo getenv('PHPENV');"], cwd=other,
                                     env=phpenv.environment(), text=True, capture_output=True, check=True)
             self.assertEqual(result.stdout, str(phpenv.ENV))
+            result = subprocess.run([sys.executable, str(phpenv.ROOT / "scripts/php.py"),
+                                     "-r", "echo getcwd();"], cwd=other, text=True,
+                                    capture_output=True, check=True)
+            self.assertEqual(Path(result.stdout).resolve(), other.resolve())
             subprocess.run([str(phpenv.php()), str(phpenv.ENV / "composer.phar"), "--version"],
                            cwd=other, env=phpenv.environment(), check=True)
 
