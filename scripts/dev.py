@@ -24,7 +24,9 @@ def check():
         compose("exec", "-T", "app", "php", f"tests/{test}.php")
     binding = compose("port", "app", "8080", capture=True)
     with urllib.request.urlopen(f"http://{binding}/", timeout=15) as response:
-        if response.status != 200 or b"Local infrastructure is ready" not in response.read():
+        body = response.read()
+        if (response.status != 200 or b"Local infrastructure is ready" not in body
+                or not body.lstrip().lower().startswith(b"<!doctype html>")):
             raise RuntimeError("Browser-facing infrastructure response failed.")
     print(f"PASS HTTP -> PHP -> Yii2 -> MySQL: http://{binding}/")
 

@@ -11,7 +11,8 @@ try {
     $database = infrastructureDatabase();
     $version = (string) $database->createCommand('SELECT VERSION()')->queryScalar();
     $engine = (string) $database->createCommand('SELECT @@default_storage_engine')->queryScalar();
-    echo (new yii\web\View())->renderFile(__DIR__ . '/views/index.php', [
+    // This fixed PHP template does not require application-level localized lookup.
+    echo (new yii\web\View())->renderPhpFile(__DIR__ . '/views/index.php', [
         'php' => PHP_VERSION,
         'yii' => Yii::getVersion(),
         'mysql' => $version,

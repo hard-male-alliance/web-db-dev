@@ -37,6 +37,8 @@ def check():
                     time.sleep(0.1)
             else:
                 raise RuntimeError("PHP HTTP server did not become ready.")
+            if not body.lstrip().lower().startswith("<!doctype html>"):
+                raise RuntimeError("Unexpected output before the HTML document; inspect PHP diagnostics.")
             version = run([php(), "-r", "echo PHP_VERSION;"], env=environment(), capture_output=True, text=True).stdout
             if f"PHP {version} / Yii2 2.0.55" not in body:
                 raise RuntimeError("Unexpected runtime/framework in HTTP response.")

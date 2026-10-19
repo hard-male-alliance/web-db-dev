@@ -103,3 +103,26 @@ database volume followed by marker, database and HTTP checks. CI cleanup passed.
 This extends the earlier validation without claiming Windows/macOS Docker execution
 or completed business-application behavior. The native environment and full Docker
 database journeys are complementary checks, not substitutes for each other.
+
+## Local interactive check and rendering correction (2026-10-19)
+
+On the Windows x64 development host, Python 3.14.6 ran `python setup.py` against
+the existing environment and vendor directory. PHP 8.4.26, Composer 2.10.3 and
+Yii2 2.0.55 passed runtime and platform checks. PowerShell activation resolved both
+CLI commands inside `.phpenv`; activating twice preserved a single PATH entry,
+and deactivation restored every managed variable's original value and presence.
+The 11-test infrastructure suite passed with the Unix-shell journey skipped.
+
+Inspecting the actual HTTP body exposed two warnings despite HTTP 200: standalone
+`View::renderFile()` performed localized file lookup through a null `Yii::$app`.
+Both standalone probe endpoints now use `renderPhpFile()` for their fixed PHP
+templates, without introducing a full application solely for localization.
+Native and Docker HTTP checks now reject output before the HTML doctype. The
+native check first failed against the old endpoint, then passed after the fix;
+the live page returned clean HTML, expected runtime versions and escaped input.
+PHP syntax checks passed for both modified endpoints. No diagnostics were hidden
+or disabled. This check reused the installed environment, not a fresh download.
+
+No Docker executable was available on the host PATH, so local MySQL/container
+execution was not attempted. The Docker-side rendering correction has not yet
+been rerun through remote CI in this local interactive check.
